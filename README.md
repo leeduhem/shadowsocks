@@ -90,8 +90,8 @@ Apache License
 
 
 
-[Build Status]:      https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
+[Build Status]:      https://img.shields.io/travis/leeduhem/shadowsocks/master.svg?style=flat
 [PyPI]:              https://pypi.python.org/pypi/shadowsocks
 [PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
-[Travis CI]:         https://travis-ci.org/shadowsocks/shadowsocks
+[Travis CI]:         https://travis-ci.org/leeduhem/shadowsocks
 
