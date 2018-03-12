@@ -35,6 +35,10 @@ tags
 .#*
 venv/
 
+#Vim
+*.swp
+*~
+
 # VS-code
 .vscode/
 
