@@ -218,9 +218,9 @@ class TCPRelayHandler(object):
             return False
         uncomplete = False
         try:
-            l = len(data)
+            n = len(data)
             s = sock.send(data)
-            if s < l:
+            if s < n:
                 data = data[s:]
                 uncomplete = True
         except (OSError, IOError) as e:
@@ -274,10 +274,10 @@ class TCPRelayHandler(object):
                                                self._chosen_server[1])
                 self._loop.add(remote_sock, eventloop.POLL_ERR, self._server)
                 data = b''.join(self._data_to_write_to_remote)
-                l = len(data)
+                n = len(data)
                 s = remote_sock.sendto(data, MSG_FASTOPEN,
                                        self._chosen_server)
-                if s < l:
+                if s < n:
                     data = data[s:]
                     self._data_to_write_to_remote = [data]
                 else:
@@ -862,7 +862,8 @@ class TCPRelay(object):
         else:
             handler = self._fd_to_handlers.get(fd, None)
             if handler:
-                logging.debug("tcp: local handler %s for fd %d", str(handler), fd)
+                logging.debug("tcp: local handler %s for fd %d",
+                              str(handler), fd)
                 handler.handle_event(sock, event)
 
     def handle_periodic(self):

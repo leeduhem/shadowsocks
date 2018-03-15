@@ -132,19 +132,19 @@ def run_cipher(cipher, decipher):
     print('test start')
     start = time.time()
     while pos < len(plain):
-        l = random.randint(100, 32768)
-        # print(pos, l)
-        c = cipher.encrypt_once(plain[pos:pos + l])
+        r = random.randint(100, 32768)
+        # print(pos, r)
+        c = cipher.encrypt_once(plain[pos:pos + r])
         cipher_results.append(c)
-        pos += l
+        pos += r
     pos = 0
     # c = b''.join(cipher_results)
     plain_results = []
     for c in cipher_results:
-        # l = random.randint(100, 32768)
-        l = len(c)
+        # n = random.randint(100, 32768)
+        n = len(c)
         plain_results.append(decipher.decrypt_once(c))
-        pos += l
+        pos += n
     end = time.time()
     print('speed: %d bytes/s' % (block_size * rounds / (end - start)))
     assert b''.join(plain_results) == plain

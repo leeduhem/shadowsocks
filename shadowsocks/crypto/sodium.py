@@ -207,23 +207,23 @@ class SodiumCrypto(object):
 
     def update(self, data):
         global buf_size, buf
-        l = len(data)
+        n = len(data)
 
         # we can only prepend some padding to make the encryption align to
         # blocks
         padding = self.counter % BLOCK_SIZE
-        if buf_size < padding + l:
-            buf_size = (padding + l) * 2
+        if buf_size < padding + n:
+            buf_size = (padding + n) * 2
             buf = create_string_buffer(buf_size)
 
         if padding:
             data = (b'\0' * padding) + data
-        self.cipher(byref(buf), c_char_p(data), padding + l,
+        self.cipher(byref(buf), c_char_p(data), padding + n,
                     self.iv_ptr, int(self.counter / BLOCK_SIZE), self.key_ptr)
-        self.counter += l
+        self.counter += n
         # buf is copied to a str object when we access buf.raw
         # strip off the padding
-        return buf.raw[padding:padding + l]
+        return buf.raw[padding:padding + n]
 
     def clean(self):
         pass

@@ -201,13 +201,13 @@ class MbedTLSCryptoBase(object):
         """
         global buf_size, buf
         cipher_out_len = c_size_t(0)
-        l = len(data)
-        if buf_size < l:
-            buf_size = l * 2
+        n = len(data)
+        if buf_size < n:
+            buf_size = n * 2
             buf = create_string_buffer(buf_size)
         libmbedtls.mbedtls_cipher_update(
             byref(self._ctx),
-            c_char_p(data), c_size_t(l),
+            c_char_p(data), c_size_t(n),
             byref(buf), byref(cipher_out_len)
         )
         # buf is copied to a str object when we access buf.raw

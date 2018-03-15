@@ -77,10 +77,10 @@ def build_address(address):
     labels = address.split(b'.')
     results = []
     for label in labels:
-        l = len(label)
-        if l > 63:
+        n = len(label)
+        if n > 63:
             return None
-        results.append(common.chr(l))
+        results.append(common.chr(n))
         results.append(label)
     results.append(b'\0')
     return b''.join(results)
@@ -108,9 +108,9 @@ def parse_ip(addrtype, data, length, offset):
 def parse_name(data, offset):
     p = offset
     labels = []
-    l = common.ord(data[p])
-    while l > 0:
-        if (l & (128 + 64)) == (128 + 64):
+    c = common.ord(data[p])
+    while c > 0:
+        if (c & (128 + 64)) == (128 + 64):
             # pointer
             pointer = struct.unpack('!H', data[p:p + 2])[0]
             pointer &= 0x3FFF
@@ -120,9 +120,9 @@ def parse_name(data, offset):
             # pointer is the end
             return p - offset, b'.'.join(labels)
         else:
-            labels.append(data[p + 1:p + 1 + l])
-            p += 1 + l
-        l = common.ord(data[p])
+            labels.append(data[p + 1:p + 1 + c])
+            p += 1 + c
+        c = common.ord(data[p])
     return p - offset + 1, b'.'.join(labels)
 
 

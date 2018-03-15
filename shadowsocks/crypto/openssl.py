@@ -121,13 +121,13 @@ class OpenSSLCryptoBase(object):
         """
         global buf_size, buf
         cipher_out_len = c_long(0)
-        l = len(data)
-        if buf_size < l:
-            buf_size = l * 2
+        n = len(data)
+        if buf_size < n:
+            buf_size = n * 2
             buf = create_string_buffer(buf_size)
         libcrypto.EVP_CipherUpdate(
             self._ctx, byref(buf),
-            byref(cipher_out_len), c_char_p(data), l
+            byref(cipher_out_len), c_char_p(data), n
         )
         # buf is copied to a str object when we access buf.raw
         return buf.raw[:cipher_out_len.value]

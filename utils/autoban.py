@@ -36,6 +36,7 @@ def inet_pton(str_ip):
     except socket.error:
         return None
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='See README')
     parser.add_argument('-c', '--count', default=3, type=int,
