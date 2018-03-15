@@ -576,19 +576,16 @@ class TCPRelayHandler(object):
                 return
         if self._stage == STAGE_STREAM:
             self._handle_stage_stream(data)
-            return
-        elif is_local and self._stage == STAGE_INIT:
-            # jump over socks5 init
-            if self._is_tunnel:
-                self._handle_stage_addr(data)
-                return
-            else:
+        elif self._stage == STAGE_INIT:
+            if is_local and not self._is_tunnel:
                 self._handle_stage_init(data)
+            else:
+                self._handle_stage_addr(data)
         elif self._stage == STAGE_CONNECTING:
             self._handle_stage_connecting(data)
-        elif (is_local and self._stage == STAGE_ADDR) or \
-                (not is_local and self._stage == STAGE_INIT):
-            self._handle_stage_addr(data)
+        elif self._stage == STAGE_ADDR:
+            if is_local:
+                self._handle_stage_addr(data)
 
     def _on_remote_read(self):
         # handle all remote read events
@@ -864,6 +861,7 @@ class TCPRelay(object):
         else:
             handler = self._fd_to_handlers.get(fd, None)
             if handler:
+                logging.debug("tcp: local handler %s for fd %d", str(handler), fd)
                 handler.handle_event(sock, event)
 
     def handle_periodic(self):
