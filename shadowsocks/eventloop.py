@@ -167,13 +167,13 @@ class EventLoop(object):
         events = self._impl.poll(timeout)
         return [(self._fdmap[fd][0], fd, event) for fd, event in events]
 
-    def add(self, f, mode, handler):
-        fd = f.fileno()
-        self._fdmap[fd] = (f, handler)
+    def add(self, sock, mode, handler):
+        fd = sock.fileno()
+        self._fdmap[fd] = (sock, handler)
         self._impl.register(fd, mode)
 
-    def remove(self, f):
-        fd = f.fileno()
+    def remove(self, sock):
+        fd = sock.fileno()
         del self._fdmap[fd]
         self._impl.unregister(fd)
 
@@ -183,8 +183,8 @@ class EventLoop(object):
     def remove_periodic(self, callback):
         self._periodic_callbacks.remove(callback)
 
-    def modify(self, f, mode):
-        fd = f.fileno()
+    def modify(self, sock, mode):
+        fd = sock.fileno()
         self._impl.modify(fd, mode)
 
     def stop(self):
@@ -210,12 +210,13 @@ class EventLoop(object):
 
             for sock, fd, event in events:
                 handler = self._fdmap.get(fd, None)
-                if handler is not None:
-                    handler = handler[1]
-                    try:
-                        handler.handle_event(sock, fd, event)
-                    except (OSError, IOError) as e:
-                        shell.print_exception(e)
+                if not handler:
+                    continue
+                handler = handler[1]
+                try:
+                    handler.handle_event(sock, fd, event)
+                except (OSError, IOError) as e:
+                    shell.print_exception(e)
             now = time.time()
             if asap or now - self._last_time >= TIMEOUT_PRECISION:
                 for callback in self._periodic_callbacks:
