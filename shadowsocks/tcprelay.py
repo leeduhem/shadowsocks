@@ -240,14 +240,14 @@ class TCPRelayHandler(object):
                 self._data_to_write_to_remote.append(data)
                 self._update_stream(STREAM_UP, WAIT_STATUS_WRITING)
             else:
-                logging.error('write_all_to_sock:unknown socket')
+                logging.error('_write_to_sock:unknown socket')
         else:
             if sock == self._local_sock:
                 self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
             elif sock == self._remote_sock:
                 self._update_stream(STREAM_UP, WAIT_STATUS_READING)
             else:
-                logging.error('write_all_to_sock:unknown socket')
+                logging.error('_write_to_sock:unknown socket')
         return True
 
     def _handle_stage_connecting(self, data):
@@ -288,7 +288,7 @@ class TCPRelayHandler(object):
                     # in this case data is not sent at all
                     self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
                 elif eventloop.errno_from_exception(e) == errno.ENOTCONN:
-                    logging.error('fast open not supported on this OS')
+                    logging.error('tcp: fast open not supported on this OS')
                     self._config['fast_open'] = False
                     self.destroy()
                 else:
@@ -656,7 +656,7 @@ class TCPRelayHandler(object):
     def handle_event(self, sock, event):
         # handle all events in this handler and dispatch them to methods
         if self._stage == STAGE_DESTROYED:
-            logging.debug('ignore handle_event: destroyed')
+            logging.debug('tcp: ignore handle_event: destroyed')
             return
         # order is important
         if sock == self._remote_sock:
@@ -682,7 +682,7 @@ class TCPRelayHandler(object):
             if event & eventloop.POLL_OUT:
                 self._on_local_write()
         else:
-            logging.warn('unknown socket')
+            logging.warn('tcp: unknown socket')
 
     def destroy(self):
         # destroy the handler and release any resources
@@ -749,6 +749,7 @@ class TCPRelay(object):
             raise Exception("can't get addrinfo for %s:%d" %
                             (listen_addr, listen_port))
         af, socktype, proto, canonname, sa = addrs[0]
+        logging.debug("tcp: server address %s", str(addrs[0]))
         server_socket = socket.socket(af, socktype, proto)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(sa)
@@ -757,7 +758,7 @@ class TCPRelay(object):
             try:
                 server_socket.setsockopt(socket.SOL_TCP, 23, 5)
             except socket.error:
-                logging.error('warning: fast open is not available')
+                logging.error('tcp: fast open is not available')
                 self._config['fast_open'] = False
         server_socket.listen(1024)
         self._server_socket = server_socket
@@ -803,25 +804,25 @@ class TCPRelay(object):
         # we just need a sorted last_activity queue and it's faster than heapq
         # in fact we can do O(1) insertion/remove so we invent our own
         if self._timeouts:
-            logging.log(shell.VERBOSE_LEVEL, 'sweeping timeouts')
+            logging.log(shell.VERBOSE_LEVEL, 'tcp: sweeping timeouts')
             now = time.time()
             length = len(self._timeouts)
             pos = self._timeout_offset
             while pos < length:
                 handler = self._timeouts[pos]
-                if handler:
-                    if now - handler.last_activity < self._timeout:
-                        break
-                    else:
-                        if handler.remote_address:
-                            logging.warn('timed out: %s:%d' %
-                                         handler.remote_address)
-                        else:
-                            logging.warn('timed out')
-                        handler.destroy()
-                        self._timeouts[pos] = None  # free memory
-                        pos += 1
+                if not handler:
+                    pos += 1
+                    continue
+                if now - handler.last_activity < self._timeout:
+                    break
                 else:
+                    if handler.remote_address:
+                        logging.warn('tcp: timed out: %s:%d' %
+                                     handler.remote_address)
+                    else:
+                        logging.warn('tcp: timed out')
+                    handler.destroy()
+                    self._timeouts[pos] = None  # free memory
                     pos += 1
             if pos > TIMEOUTS_CLEAN_SIZE and pos > length >> 1:
                 # clean up the timeout queue when it gets larger than half
@@ -835,14 +836,18 @@ class TCPRelay(object):
     def handle_event(self, sock, fd, event):
         # handle events and dispatch to handlers
         if sock:
-            logging.log(shell.VERBOSE_LEVEL, 'fd %d %s', fd,
+            logging.log(shell.VERBOSE_LEVEL, 'tcp: fd %d %s', fd,
                         eventloop.EVENT_NAMES.get(event, event))
+        else:
+            logging.warn('tcp: poll removed fd')
+            return
+
         if sock == self._server_socket:
             if event & eventloop.POLL_ERR:
                 # TODO
                 raise Exception('server_socket error')
             try:
-                logging.debug('accept')
+                logging.debug('tcp: accept')
                 conn = self._server_socket.accept()
                 TCPRelayHandler(self, self._fd_to_handlers,
                                 self._eventloop, conn[0], self._config,
@@ -857,12 +862,9 @@ class TCPRelay(object):
                     if self._config['verbose']:
                         traceback.print_exc()
         else:
-            if sock:
-                handler = self._fd_to_handlers.get(fd, None)
-                if handler:
-                    handler.handle_event(sock, event)
-            else:
-                logging.warn('poll removed fd')
+            handler = self._fd_to_handlers.get(fd, None)
+            if handler:
+                handler.handle_event(sock, event)
 
     def handle_periodic(self):
         if self._closed:
@@ -870,14 +872,14 @@ class TCPRelay(object):
                 self._eventloop.remove(self._server_socket)
                 self._server_socket.close()
                 self._server_socket = None
-                logging.info('closed TCP port %d', self._listen_port)
+                logging.info('tcp: closed TCP port %d', self._listen_port)
             if not self._fd_to_handlers:
-                logging.info('stopping')
+                logging.info('tcp: stopping')
                 self._eventloop.stop()
         self._sweep_timeout()
 
     def close(self, next_tick=False):
-        logging.debug('TCP close')
+        logging.debug('tcp: close')
         self._closed = True
         if not next_tick:
             if self._eventloop:
