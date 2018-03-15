@@ -196,6 +196,7 @@ def check_config(config, is_local):
         if os.name != 'posix':
             logging.error('user can be used only on Unix')
             sys.exit(1)
+        config['user'] = to_str(config['user'])
     if config.get('dns_server', None) is not None:
         if type(config['dns_server']) != list:
             config['dns_server'] = to_str(config['dns_server'])
