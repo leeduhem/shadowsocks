@@ -756,7 +756,7 @@ class TCPRelay(object):
         server_socket.setblocking(False)
         if config['fast_open']:
             try:
-                server_socket.setsockopt(socket.SOL_TCP, 23, 5)
+                server_socket.setsockopt(socket.SOL_TCP, socket.TCP_FASTOPEN, 5)
             except socket.error:
                 logging.error('tcp: fast open is not available')
                 self._config['fast_open'] = False
